@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detective Digital: Koleksi Bukti Rahasia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Quicksand:wght@400;700&display=swap');
+
+        :root {
+            --p-red: #ffadad; --p-orange: #ffd6a5; --p-yellow: #fdffb6;
+            --p-green: #caffbf; --p-blue: #9bf6ff; --p-indigo: #a0c4ff;
+            --p-purple: #bdb2ff; --p-pink: #ffc6ff;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: #0f172a;
+            color: white;
+            overflow-y: auto;
+            min-height: 100vh;
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        .detective-font { font-family: 'Special Elite', cursive; }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        #balloon {
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 0 20px rgba(160, 196, 255, 0.4));
+        }
+
+        .evidence-slot {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.5s ease;
+        }
+
+        .evidence-collected {
+            background: var(--p-indigo);
+            border: 2px solid white;
+            color: #1e1b4b;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px var(--p-indigo);
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .option-btn:hover {
+            background: white;
+            color: #0f172a;
+            transform: translateX(10px);
+        }
+
+        @keyframes float-item {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating-evidence {
+            animation: float-item 2s infinite ease-in-out;
+        }
+
+        .rainbow-gradient {
+            background: linear-gradient(to right, var(--p-red), var(--p-orange), var(--p-yellow), var(--p-green), var(--p-blue), var(--p-purple));
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- Start Overlay -->
+    <div id="overlay-start" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-6 text-center">
+        <div class="max-w-md">
+            <div class="text-8xl mb-6 text-indigo-400 drop-shadow-[0_0_15px_rgba(129,140,248,0.5)]"><i class="fas fa-user-secret"></i></div>
+            <h1 class="detective-font text-5xl mb-4 text-white">THE SECRET EVIDENCE</h1>
+            <p class="text-gray-400 mb-8">Kumpulkan 10 bukti rahasia yang tersembunyi di dalam balon untuk mengungkap skandal digital terbesar!</p>
+            <button onclick="startGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-5 rounded-2xl font-bold text-2xl shadow-xl transition transform hover:scale-105 active:scale-95">
+                MULAI MISI <i class="fas fa-search ml-2"></i>
+            </button>
+            <p class="mt-4 text-xs text-gray-500">Klik untuk mengaktifkan musik & efek suara</p>
+        </div>
+    </div>
+
+    <!-- Main Game UI -->
+    <div id="game-container" class="max-w-6xl mx-auto hidden">
+        
+        <!-- Header Info -->
+        <header class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="glass-card p-4 flex items-center gap-4">
+                <div class="text-3xl text-indigo-400"><i class="fas fa-id-badge"></i></div>
+                <div>
+                    <p class="text-[10px] uppercase text-gray-500 font-bold">Rank Detektif</p>
+                    <p id="det-rank" class="font-bold text-lg text-white">Junior Trainee</p>
+                </div>
+            </div>
+            <div class="glass-card p-4 flex items-center justify-center">
+                <h2 class="detective-font text-2xl text-yellow-400">CASE #<span id="case-num">01</span></h2>
+            </div>
+            <div class="glass-card p-4 flex items-center gap-4 justify-end">
+                <div class="text-right">
+                    <p class="text-[10px] uppercase text-gray-500 font-bold">Total Skor</p>
+                    <p id="total-score" class="font-bold text-xl text-green-400">0</p>
+                </div>
+                <div class="text-3xl text-green-400"><i class="fas fa-coins"></i></div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left: Evidence & Balloon -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="glass-card p-8 flex flex-col items-center justify-center relative min-h-[450px] overflow-hidden">
+                    <!-- Balloon Area -->
+                    <div id="balloon-area" class="relative z-10">
+                        <svg id="balloon" width="180" height="220" viewBox="0 0 180 220">
+                            <defs>
+                                <radialGradient id="balloonGrad" cx="30%" cy="30%" r="50%">
+                                    <stop offset="0%" style="stop-color:white; stop-opacity:0.3" />
+                                    <stop offset="100%" style="stop-color:transparent; stop-opacity:0" />
+                                </radialGradient>
+                            </defs>
+                            <path id="balloon-path" d="M90 10 C40 10 10 50 10 100 C10 150 40 190 90 205 C140 190 170 150 170 100 C170 50 140 10 90 10" fill="#ffadad" />
+                            <circle cx="90" cy="100" r="70" fill="url(#balloonGrad)" />
+                            <path d="M85 205 L95 205 L90 215 Z" fill="#ffadad" opacity="0.8" />
+                            <path d="M90 215 Q95 230 85 250" stroke="white" fill="none" stroke-width="2" />
+                        </svg>
+                    </div>
+
+                    <!-- Progress Pressure -->
+                    <div class="w-full mt-8">
+                        <div class="flex justify-between text-[10px] uppercase font-bold mb-1 text-gray-400">
+                            <span>Tekanan Udara</span>
+                            <span id="pressure-text">0%</span>
+                        </div>
+                        <div class="h-3 bg-gray-800 rounded-full border border-white/10 overflow-hidden">
+                            <div id="pressure-bar" class="h-full bg-gradient-to-r from-blue-400 to-pink-500 transition-all duration-500" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evidence Bag -->
+                <div class="glass-card p-6">
+                    <h3 class="detective-font text-sm mb-4 text-gray-400 uppercase tracking-widest"><i class="fas fa-briefcase mr-2"></i> Evidence Case File</h3>
+                    <div id="evidence-grid" class="grid grid-cols-5 gap-3">
+                        <!-- Evidence slots generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Puzzle & Story -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="glass-card p-8 border-l-8 border-indigo-500">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center text-3xl"><i class="fas fa-user-secret"></i></div>
+                        <div>
+                            <h4 class="font-bold text-indigo-300">Detektif Senior</h4>
+                            <p id="det-message" class="text-sm italic text-gray-400">"Setiap balon menyimpan satu kepingan rahasia. Jangan biarkan mereka lolos!"</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-black/30 p-6 rounded-2xl border border-white/5 mb-8">
+                        <h2 id="q-title" class="text-2xl font-bold mb-3 text-white">Judul Misi</h2>
+                        <p id="q-text" class="text-gray-300 leading-relaxed text-lg">Pertanyaan akan muncul di sini...</p>
+                    </div>
+
+                    <div id="options-grid" class="grid grid-cols-1 gap-4">
+                        <!-- Options go here -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- REWARD MODAL (Muncul saat balon meletus) -->
+    <div id="reward-modal" class="fixed inset-0 z-[110] bg-black/90 hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="floating-evidence text-8xl text-yellow-400 mb-6" id="reward-icon">
+            <i class="fas fa-hdd"></i>
+        </div>
+        <h2 class="detective-font text-4xl text-white mb-2">BUKTI DITEMUKAN!</h2>
+        <h3 id="reward-name" class="text-2xl font-bold text-indigo-300 mb-4">GOLDEN USB DRIVE</h3>
+        <p id="reward-desc" class="max-w-md text-gray-400 mb-8 italic">"Ini berisi rekaman asli tentang bagaimana hoax tersebut mulai disebarkan..."</p>
+        <button onclick="closeReward()" class="px-12 py-4 rainbow-gradient text-gray-900 font-bold rounded-2xl text-xl hover:scale-105 transition shadow-lg">MASUKKAN KE FILE KASUS</button>
+    </div>
+
+    <!-- FINAL WIN MODAL -->
+    <div id="win-modal" class="fixed inset-0 z-[120] bg-slate-900 hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="text-9xl text-yellow-400 mb-6 drop-shadow-[0_0_30px_rgba(250,204,21,0.5)]"><i class="fas fa-award"></i></div>
+        <h1 class="detective-font text-5xl text-white mb-4">CASE RESOLVED!</h1>
+        <p class="text-gray-400 mb-8 max-w-lg">Kamu telah mengumpulkan seluruh 10 bukti rahasia. Dunia digital kini lebih aman berkat kerja kerasmu!</p>
+        <div class="bg-white/10 p-6 rounded-3xl mb-8">
+            <p class="text-sm uppercase text-gray-500 font-bold">Pangkat Akhir</p>
+            <p class="text-3xl font-bold rainbow-text" style="background: linear-gradient(to right, #ffadad, #9bf6ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CHIEF DIGITAL INSPECTOR</p>
+        </div>
+        <button onclick="location.reload()" class="bg-indigo-600 text-white px-12 py-4 rounded-2xl font-bold text-xl">MAIN LAGI</button>
+    </div>
+
+    <script>
+        const gameData = [
+            { t: "The Social Key", q: "Bukti #1: Seseorang lebih asyik dengan dunia maya sampai lupa makan bersama keluarga. Dampak utama yang terjadi adalah?", o: ["Interaksi sosial berkurang", "Kesehatan mata meningkat", "Baterai HP makin awet", "Koneksi internet gratis"], c: 0, icon: "fa-key", name: "Kunci Akses Sosial", desc: "Data ini membuktikan bahwa interaksi nyata mulai pudar akibat kecanduan gadget." },
+            { t: "The Bully Shield", q: "Bukti #2: Ditemukan pesan ejekan beruntun kepada seorang siswa di grup kelas. Fenomena berbahaya ini disebut?", o: ["Cyber-Security", "Cyber-Smart", "Cyberbullying", "Cyber-Game"], c: 2, icon: "fa-shield-alt", name: "Perisai Kebaikan", desc: "Bukti intimidasi digital telah diamankan untuk diserahkan ke pihak sekolah." },
+            { t: "The Truth Lens", q: "Bukti #3: Sebuah pesan heboh 'Klik ini dapat uang' tersebar tanpa sumber jelas. Ini adalah contoh?", o: ["Berita Resmi", "Hoax / Penipuan", "Hadiah Pemerintah", "Iklan Film"], c: 1, icon: "fa-search", name: "Lensa Kebenaran", desc: "Berhasil mengungkap jaringan penyebar berita palsu yang meresahkan." },
+            { t: "The OTP Safe", q: "Bukti #4: Data manakah yang jika dicuri bisa membobol seluruh akun digitalmu?", o: ["Nama hewan peliharaan", "Warna baju", "Kode OTP & Password", "Merk sepatu"], c: 2, icon: "fa-vault", name: "Brankas Kode Rahasia", desc: "Bukti bahwa banyak orang mengabaikan keamanan kode OTP pribadi mereka." },
+            { t: "The Digital Footprint", q: "Bukti #5: Foto masa lalu yang memalukan tetap ada di internet meski sudah dihapus. Istilahnya adalah?", o: ["Jejak Kaki", "Jejak Digital", "Awan Putih", "Memori Hilang"], c: 1, icon: "fa-shoe-prints", name: "Dokumen Jejak Digital", desc: "Sekali diunggah, selamanya berbekas. Bukti ini mengingatkan kita untuk berhati-hati." },
+            { t: "The Privacy File", q: "Bukti #6: Mengapa kita dilarang membagikan alamat rumah lengkap di medsos secara bebas?", o: ["Agar tidak ada yang main", "Menghindari ancaman fisik/kejahatan", "Biar paket tidak sampai", "Agar hemat kertas"], c: 1, icon: "fa-file-contract", name: "Berkas Privasi Data", desc: "Privasi adalah hak dasar yang harus dijaga agar terhindar dari orang jahat." },
+            { t: "The Netiquette Scroll", q: "Bukti #7: Aturan kesopanan saat berkomunikasi di dunia maya disebut?", o: ["Netiquette", "Traffic Rules", "Gaming Mode", "Coding Rules"], c: 0, icon: "fa-scroll", name: "Gulungan Etika Digital", desc: "Berisi aturan bagaimana berbicara sopan meski tidak bertatap muka langsung." },
+            { t: "The ITE Hammer", q: "Bukti #8: Hukum di Indonesia yang menjerat pelaku kejahatan digital adalah?", o: ["UU Lalu Lintas", "UU ITE", "UU Pendidikan", "UU Perikanan"], c: 1, icon: "fa-gavel", name: "Palu Hukum Digital", desc: "Bukti bahwa negara mengawasi dan menindak tegas pelanggar di dunia maya." },
+            { t: "The Self-Esteem Chip", q: "Bukti #9: Merasa rendah diri setelah melihat gaya hidup mewah orang lain di medsos adalah dampak...", o: ["Fisik", "Psikologis", "Ekonomi", "Teknis"], c: 1, icon: "fa-microchip", name: "Chip Mental Positif", desc: "Data ini mengungkap bahwa kesehatan mental sering terganggu oleh 'panggung' media sosial." },
+            { t: "The Master Wisdom", q: "Bukti #10: Senjata terkuat detektif digital agar tidak tertipu oleh dampak negatif informatika adalah?", o: ["HP paling mahal", "Sikap kritis & Literasi digital", "Tidak pakai internet", "Hapus semua akun"], c: 1, icon: "fa-brain", name: "Sertifikat Kebijaksanaan", desc: "Bukti akhir: Pikiran yang kritis adalah alat pertahanan terbaik manusia." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let scale = 1.0;
+        let audioCtx;
+        let collected = [];
+
+        function startGame() {
+            document.getElementById('overlay-start').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            initAudio();
+            initEvidenceGrid();
+            loadQuestion();
+        }
+
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const drone = () => {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.type = 'sine'; o.frequency.value = 55;
+                g.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 4);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(); o.stop(audioCtx.currentTime + 4);
+                setTimeout(drone, 3000);
+            };
+            drone();
+        }
+
+        function playSound(f, t='sine', d=0.3) {
+            if(!audioCtx) return;
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = t; o.frequency.value = f;
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + d);
+        }
+
+        function initEvidenceGrid() {
+            const grid = document.getElementById('evidence-grid');
+            grid.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                const slot = document.createElement('div');
+                slot.id = `slot-${i}`;
+                slot.className = 'evidence-slot';
+                slot.innerHTML = '<i class="fas fa-lock opacity-20"></i>';
+                grid.appendChild(slot);
+            }
+        }
+
+        function loadQuestion() {
+            const q = gameData[currentIdx];
+            document.getElementById('case-num').innerText = String(currentIdx + 1).padStart(2, '0');
+            document.getElementById('q-title').innerText = q.t;
+            document.getElementById('q-text').innerText = q.q;
+            
+            // Update Rank
+            const ranks = ["Junior Trainee", "Private Investigator", "Special Agent", "Digital Warden", "Elite Ranger", "Cyber Inspector", "Global Guardian", "Justice Bringer", "Logic Master", "Chief Inspector"];
+            document.getElementById('det-rank').innerText = ranks[currentIdx] || "Chief Inspector";
+
+            const colors = ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'];
+            document.getElementById('balloon-path').setAttribute('fill', colors[currentIdx % colors.length]);
+
+            const grid = document.getElementById('options-grid');
+            grid.innerHTML = '';
+            q.o.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full p-5 text-left rounded-2xl font-bold border-2 border-white/10";
+                btn.innerHTML = `<span class="text-indigo-400 mr-4 font-detective">${i+1}.</span> ${opt}`;
+                btn.onclick = () => checkAnswer(i);
+                grid.appendChild(btn);
+            });
+
+            scale = 1.0;
+            updateBalloon();
+        }
+
+        function checkAnswer(i) {
+            const correct = gameData[currentIdx].c;
+            if (i === correct) {
+                score += (currentIdx + 1) * 50;
+                scale += 0.4;
+                playSound(600);
+                updateBalloon();
+                document.getElementById('total-score').innerText = score;
+                document.getElementById('det-message').innerText = `"Bagus! Udara masuk, kebenaran mulai terungkap!"`;
+
+                if (scale >= 1.9) {
+                    setTimeout(revealReward, 500);
+                }
+            } else {
+                playSound(150, 'sawtooth');
+                document.getElementById('det-message').innerText = `"Salah detektif! Analisis lagi datanya!"`;
+            }
+        }
+
+        function updateBalloon() {
+            const b = document.getElementById('balloon');
+            b.style.transform = `scale(${scale})`;
+            const perc = Math.min(((scale - 1) / 0.9) * 100, 100);
+            document.getElementById('pressure-bar').style.width = perc + '%';
+            document.getElementById('pressure-text').innerText = Math.round(perc) + '%';
+        }
+
+        function revealReward() {
+            const q = gameData[currentIdx];
+            playSound(800, 'sine', 0.5);
+            
+            // Konfeti Pelangi
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff']
+            });
+
+            document.getElementById('reward-icon').innerHTML = `<i class="fas ${q.icon}"></i>`;
+            document.getElementById('reward-name').innerText = q.name;
+            document.getElementById('reward-desc').innerText = `"${q.desc}"`;
+            document.getElementById('reward-modal').classList.remove('hidden');
+        }
+
+        function closeReward() {
+            const slot = document.getElementById(`slot-${currentIdx}`);
+            slot.classList.add('evidence-collected');
+            slot.innerHTML = `<i class="fas ${gameData[currentIdx].icon}"></i>`;
+
+            document.getElementById('reward-modal').classList.add('hidden');
+            
+            currentIdx++;
+            if (currentIdx < gameData.length) {
+                loadQuestion();
+            } else {
+                showWin();
+            }
+        }
+
+        function showWin() {
+            document.getElementById('game-container').classList.add('hidden');
+            document.getElementById('win-modal').classList.remove('hidden');
+            playSound(523); setTimeout(()=>playSound(659), 200); setTimeout(()=>playSound(783), 400);
+        }
+    </script>
+</body>
+</html>
